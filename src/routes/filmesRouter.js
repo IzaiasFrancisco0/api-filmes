@@ -1,44 +1,41 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import {ObjectId} from 'mongodb';
+import connectToMongo from '../config/db.js';
 
 const filmesRouter = async (fastify, options) => {
+  const db = await connectToMongo();
+  const filmesCollection = db.collection('filmes');
 
-  fastify.post('/filme', async (request, reply) => {
+  fastify.post('/filme', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['image', 'name', 'description', 'category'], // Campos obrigatórios
+        properties: {
+          image: { type: 'string' },
+          name: { type: 'string' },
+          description: { type: 'string' },
+          category: { type: 'string' }
+        }
+      }
+    }
+  }, async (request, reply) => {
     const { image, name, description, category } = request.body;
-
-    if (!image || image.trim() === '') {
-      reply.status(400).send({ error: "A URL da imagem é obrigatória" });
-      return;
-    }
-
-    if (!name || name.trim() === '') {
-      reply.status(400).send({ error: "O nome do filme é obrigatório" });
-      return;
-    }
-
-    if (!description || description.trim() === '') {
-      reply.status(400).send({ error: "A descrição do filme é obrigatória" });
-      return;
-    }
-
-    if (!category || category.trim() === '') {
-      return reply.status(400).send({ error: "A categoria do filme é obrigatória" });
-    }
-
+  
+    console.log('Dados recebidos:', request.body); // Log para verificar os dados recebidos
+    
     try {
-      const filme = await prisma.filme.create({
-        data: { image, name, description, category },
-      });
-      reply.status(201).send("Filme criado com sucesso!!")
+      const result = await filmesCollection.insertOne({ image, name, description, category });
+      reply.status(201).send({ message: 'Filme criado com sucesso!', id: result.insertedId });
     } catch (err) {
       reply.status(500).send(err);
     }
   });
+  
+  
 
-  fastify.get('/filmes', async (request, reply) => {
+  fastify.get('/filmes', async (_, reply) => {
     try {
-      const filmes = await prisma.filme.findMany();
+      const filmes = await filmesCollection.find().toArray();
       reply.send(filmes);
     } catch (err) {
       reply.status(500).send({ error: 'Erro ao recuperar filmes', details: err });
@@ -46,57 +43,70 @@ const filmesRouter = async (fastify, options) => {
   });
 
   fastify.put('/filmes/:id', async (request, reply) => {
-     const {id} = request.params;
-     const { image, name, description, category } = request.body;
+    const { id } = request.params;
+    const { image, name, description, category } = request.body;
 
-     try{
-       const filmeAtualizado = await prisma.filme.update({
-        where: {id},
-        data: { image, name, description, category },
-       });
+    try {
+      const result = await filmesCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { image, name, description, category } }
+      );
 
-       reply.send(filmeAtualizado)
-     }catch (err) {
+      if (result.matchedCount === 0) {
+        return reply.status(404).send({ error: 'Filme não encontrado' });
+      }
+
+      reply.send({ message: 'Filme atualizado com sucesso!' });
+    } catch (err) {
       reply.status(500).send({ error: 'Erro ao atualizar o filme', details: err });
     }
-  })
+  });
 
   fastify.delete('/filme/:id', async (request, reply) => {
     const { id } = request.params;
-
+    console.log('ID recebido:', id); // Para depuração
+  
+    if (!ObjectId.isValid(id)) {
+      return reply.status(400).send({ error: 'ID inválido' });
+    }
+  
     try {
-      const deleteMovie = await prisma.filme.delete({
-        where: { id },
-      });
-
-      reply.status(200).send({ message: 'Filme deletado com sucesso!!', deleteMovie });
+      const result = await filmesCollection.deleteOne({ _id: new ObjectId(id) });
+  
+      if (result.deletedCount === 0) {
+        return reply.status(404).send({ error: 'Filme não encontrado' });
+      }
+  
+      reply.send({ message: 'Filme deletado com sucesso!' });
     } catch (err) {
-      reply.status(500).send({ error: 'Erro ao deletar o filme', detail: err });
+      reply.status(500).send({ error: 'Erro ao deletar o filme', details: err.message });
     }
   });
+  
 
   fastify.patch('/filme/:id/category', async (request, reply) => {
     const { id } = request.params;
     const { category } = request.body;
-  
-    if (!category || category.trim() === '') {
+
+    if (!category) {
       return reply.status(400).send({ error: 'Categoria obrigatória' });
     }
-  
+
     try {
-      const filme = await prisma.filme.update({
-        where: { id },
-        data: { category },
-      });
-  
-      reply.send("Filme deletado com sucesso!!");
+      const result = await filmesCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { category } }
+      );
+
+      if (result.matchedCount === 0) {
+        return reply.status(404).send({ error: 'Filme não encontrado' });
+      }
+
+      reply.send({ message: 'Categoria atualizada com sucesso!' });
     } catch (err) {
       reply.status(500).send({ error: 'Erro ao atualizar categoria', details: err });
     }
   });
 };
-
-
-
 
 export default filmesRouter;
