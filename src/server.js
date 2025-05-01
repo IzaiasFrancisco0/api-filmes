@@ -9,15 +9,15 @@ app.register(cors, {
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
-})
+});
 
 const start = async () => {
   try {
     const db = await connectToMongo();
     await app.register(filmesRouter, { db });
 
-    await app.listen({ port: 5000 });
-    console.log('🚀 Servidor rodando em http://localhost:5000');
+    await app.listen({ port: 5000, host: '0.0.0.0' });
+    console.log('Servidor rodando!!');
   } catch (err) {
     console.error(err);
     process.exit(1);

@@ -14,11 +14,11 @@ export async function connectToMongo() {
     if (!db) {
       await client.connect();
       db = client.db(dbName);
-      console.log('✅ Conectado ao MongoDB');
+      console.log('Conectado ao MongoDB');
     }
     return db;
   } catch (err) {
-    console.error('❌ Erro ao conectar ao MongoDB:', err);
+    console.error('Erro ao conectar ao MongoDB:', err);
     throw err;
   }
 }
