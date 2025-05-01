@@ -1,4 +1,4 @@
-import {ObjectId} from 'mongodb';
+import { ObjectId } from 'mongodb';
 import connectToMongo from '../config/db.js';
 
 const filmesRouter = async (fastify, options) => {
@@ -9,7 +9,7 @@ const filmesRouter = async (fastify, options) => {
     schema: {
       body: {
         type: 'object',
-        required: ['image', 'name', 'description', 'category'], // Campos obrigatórios
+        required: ['image', 'name', 'description', 'category'],
         properties: {
           image: { type: 'string' },
           name: { type: 'string' },
@@ -20,9 +20,9 @@ const filmesRouter = async (fastify, options) => {
     }
   }, async (request, reply) => {
     const { image, name, description, category } = request.body;
-  
-    console.log('Dados recebidos:', request.body); // Log para verificar os dados recebidos
-    
+
+    console.log('Dados recebidos:', request.body);
+
     try {
       const result = await filmesCollection.insertOne({ image, name, description, category });
       reply.status(201).send({ message: 'Filme criado com sucesso!', id: result.insertedId });
@@ -30,8 +30,6 @@ const filmesRouter = async (fastify, options) => {
       reply.status(500).send(err);
     }
   });
-  
-  
 
   fastify.get('/filmes', async (_, reply) => {
     try {
@@ -64,25 +62,25 @@ const filmesRouter = async (fastify, options) => {
 
   fastify.delete('/filme/:id', async (request, reply) => {
     const { id } = request.params;
-    console.log('ID recebido:', id); // Para depuração
-  
+    console.log('ID recebido:', id); 
+
     if (!ObjectId.isValid(id)) {
       return reply.status(400).send({ error: 'ID inválido' });
     }
-  
+
     try {
       const result = await filmesCollection.deleteOne({ _id: new ObjectId(id) });
-  
+
       if (result.deletedCount === 0) {
         return reply.status(404).send({ error: 'Filme não encontrado' });
       }
-  
+
       reply.send({ message: 'Filme deletado com sucesso!' });
     } catch (err) {
       reply.status(500).send({ error: 'Erro ao deletar o filme', details: err.message });
     }
   });
-  
+
 
   fastify.patch('/filme/:id/category', async (request, reply) => {
     const { id } = request.params;
