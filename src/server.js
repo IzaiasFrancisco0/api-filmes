@@ -6,7 +6,7 @@ import cors from '@fastify/cors';
 const app = Fastify();
 
 app.register(cors, {
-  origin: ['http://localhost:5173', 'site-filmes-izaias-projects-b5323657.vercel.app'],
+  origin: ['http://localhost:5173', 'https://site-filmes-izaias-projects-b5323657.vercel.app/site-filmes-izaias-projects-b5323657.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 });
